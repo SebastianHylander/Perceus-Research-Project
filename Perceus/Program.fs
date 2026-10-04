@@ -25,7 +25,7 @@ let rec _normalize (expr : Expr) (ids : Id Set) =
         let ids = Set.add id1 ids
         let id2 = fresh_var ids
         let ids = Set.add id2 ids
-        Let(id1, _normalize )
+        Let(id1, _normalize e1 ids, _normalize e2 ids)
     | Let (id, e1, e2)      -> failwith "not implemented"
     | Match (id, patterns)  -> failwith "not implemented"
     | Con (id, expr_lst)    -> failwith "not implemented"
