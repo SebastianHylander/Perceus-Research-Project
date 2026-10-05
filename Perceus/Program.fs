@@ -1,33 +1,43 @@
 ﻿open Lang
+open Normalization
 open System
+let unit x = Con(x, [])
 
-let rec _used_vars (expr : Expr) (ids : Id Set) : Id Set = 
-    match expr with
-    | Var id                -> ids |> Set.add id
-    | Lam (id, e1)          -> ids |> Set.add id |> _used_vars e1
-    | App (e1, e2)          -> ids |> _used_vars e1 |> _used_vars e2
-    | Let (id, e1, e2)      -> ids |> Set.add id |> _used_vars e1 |> _used_vars e2
-    | Match (id, patterns)  -> ids |> Set.add id  |> List.foldBack (fun (PCons (id, pids), e) ids -> ids |> Set.add id |> List.foldBack Set.add pids |> _used_vars e) patterns
-    | Con (id, expr_lst)    -> ids |> Set.add id |> List.foldBack _used_vars expr_lst
+let e1 = Lam ("x", Con("42", []))
+let e2 = Let("x", Con("42", []), App(App(Var "take", Var "x"), Var "x"))
 
-let  used_vars (expr : Expr) : Id Set = _used_vars expr Set.empty
+let e3 = Con("Cons", [
+  unit "1"; 
+  Con("Cons", [
+    unit "2"; 
+    Con("Cons", [
+      unit "3"; 
+      unit "nil"
+    ])
+  ])
+])
 
-let rec fresh_var used_vars = 
-    let id = "_"+ Guid.NewGuid().ToString("N")
-    if not (Set.contains id used_vars) then id else fresh_var used_vars
+let map : Expr =
+    Let("map",
+        Lam("xs",
+            Lam("f",
+                Match(
+                    Var "xs",
+                    [
+                        PCons("Cons", ["x"; "xx"]),
+                         Con("Cons", [
+                             App(Var "f", Var "x");
+                             App(App(Var"map", Var "xx"), Var "f") 
+                         ]);
 
-let rec _normalize (expr : Expr) (ids : Id Set) = 
-    match expr with
-    | Var _                 -> expr
-    | Lam (id, e1)          -> Lam(id, _normalize e1 ids)
-    | App (e1, e2)          -> 
-        let id1 = fresh_var ids
-        let ids = Set.add id1 ids
-        let id2 = fresh_var ids
-        let ids = Set.add id2 ids
-        Let(id1, _normalize e1 ids, _normalize e2 ids)
-    | Let (id, e1, e2)      -> failwith "not implemented"
-    | Match (id, patterns)  -> failwith "not implemented"
-    | Con (id, expr_lst)    -> failwith "not implemented"
+                        PCons("Nil", []),
+                         Con("Nil", [])
+                    ]
+                )
+            )
+        ),
+        Var "map"
+    )
 
-let normalize (expr : Expr) = _normalize expr (used_vars expr)
+print(normalize e2)
+print(normalize e2 |> free_vars)
