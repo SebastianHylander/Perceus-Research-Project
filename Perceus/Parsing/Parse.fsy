@@ -1,0 +1,55 @@
+ open Lang;
+%}
+
+%token <string> NAME
+
+%token IN LET NOT MATCH FUN END
+%token LPAR RPAR SEMICOLON RIGHTARROW
+%token EOF
+
+
+%start Main
+%type <Lang.Expr> Var Lam Let Match Con
+%type <Lang.Expr> App
+%type <Lang.Pattern> PCons
+
+%%
+
+Main:
+    Expr EOF                            { $1 }
+;
+
+Expr:
+    AtExpr                              { $1                     }
+  | AppExpr                             { $1                     }
+  | Match Expr                         { Match($2, [PCons(), ]   }
+
+;
+
+AtExpr:
+    Const                               { $1                     }
+  | NAME                                { Var $1                 }
+  | LET NAME EQ Expr IN Expr END        { Let($2, $4, $6)        }
+  | FUN NAME RIGHTARROW Expr END        { Lam($2, $4)            }
+
+  | LPAR Expr RPAR                      { $2                     }
+;
+
+Params:
+    NAME                                { [$1]                   }
+  | NAME Params                         { $1 :: $2               }
+;
+
+Args:
+    AtExpr                              { [$1]                  }
+  | AtExpr Args                         { $1 :: $2              }
+;
+
+AppExpr:
+    AtExpr AtExpr                       { App($1, $2)           }
+  | AppExpr AtExpr                      { App($1, $2)           }
+;
+
+Const:
+    Con Name                              { Con($2, [])               }
+;
