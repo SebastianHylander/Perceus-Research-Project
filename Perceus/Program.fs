@@ -39,5 +39,5 @@ let map : Expr =
         Var "map"
     )
 
-print(normalize e2)
-print(normalize e2 |> free_vars)
+printf "%A" (normalize e2)
+printf "%A" (normalize e2 |> free_vars)
