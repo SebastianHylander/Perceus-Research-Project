@@ -1,5 +1,33 @@
 # Questions and Answers
 
+## Session 1
+
+### Do we understand data constructors correctly?
+
+yes, the bar above v is a list of values,
+and when we drop v_bar we need to drop all elements
+
+### Do we understand let rule condition correctly?
+
+Only let has the branches, where we need to make decisions
+So this is the only place we need the condition after normalization
+
+### What are the next steps: Make absyn in fsharp?
+
+First step is to do normalisation, then add dup and drop.
+
+Normalization is to avoid arbitrary evaluation with "e e",
+we want to get to 'e x'
+
+We normalize to what is called A-Normal form
+
+## Session 1 Notes
+
+Unlike the paper we should explicitly have C@r in the language.
+
+What makes syntax directed deterministic is the conditions added,
+specifically the free variables are important
+
 ## Session 2
 
 ### How do we efficiently generate fresh vars, monad or mutable reference?
