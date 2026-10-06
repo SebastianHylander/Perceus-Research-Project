@@ -9,6 +9,8 @@
   <ItemGroup>
     <Compile Include="Lang.fs" />
     <Compile Include="Normalization.fs" />
+    <Compile Include="RCInterpreter.fs" />
+    <Compile Include="SourceInterpreter.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
