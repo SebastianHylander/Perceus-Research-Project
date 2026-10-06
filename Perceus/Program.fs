@@ -1,6 +1,8 @@
 ﻿open Lang
 open Normalization
-open System
+open Monad
+open State
+
 let unit x = Con(x, [])
 
 let e1 = Lam ("x", Con("42", []))
@@ -24,13 +26,13 @@ let map : Expr =
                 Match(
                     Var "xs",
                     [
-                        PCons("Cons", ["x"; "xx"]),
+                        ("Cons", ["x"; "xx"]),
                          Con("Cons", [
                              App(Var "f", Var "x");
                              App(App(Var"map", Var "xx"), Var "f") 
                          ]);
 
-                        PCons("Nil", []),
+                        ("Nil", []),
                          Con("Nil", [])
                     ]
                 )
@@ -39,5 +41,8 @@ let map : Expr =
         Var "map"
     )
 
-printf "%A" (normalize e2)
-printf "%A" (normalize e2 |> free_vars)
+let run (SM(f)) = 
+    f (State.new_state ())
+
+printfn "%A" (run (normalize e2))
+printfn "%A" (run (normalize e2 >>= fun n2 -> free_vars n2 |> ret))

@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <Compile Include="Lang.fs" />
+    <Compile Include="State.fs" />
+    <Compile Include="Monad.fs" />
     <Compile Include="Normalization.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
