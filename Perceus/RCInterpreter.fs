@@ -5,11 +5,11 @@ open Lang
 // ----- HELPER TYPES -----
 type Loc = int
 
-type Env = Map<Id, Loc>
+type Env = Map<IId, Loc>
 
 type Value =
-    | VClosure of Id * IExpr * Env
-    | VCon of C * Loc list
+    | VClosure of IId * IExpr * Env
+    | VCon of IC * Loc list
 
 type HeapEntry = {
     rc: int
@@ -104,7 +104,7 @@ let rec eval (env: Env) (state: State) (expr: IExpr) : Loc * State =
 
 
     | IMatch (x, branches) ->
-        expr |> ignore // TODO
+        expr |> failwith "not implemented" // TODO
 
     | ICon (c, xs) ->
         let fields = xs |> List.map (fun x -> env[x])
@@ -112,13 +112,13 @@ let rec eval (env: Env) (state: State) (expr: IExpr) : Loc * State =
 
 
     | Dup (x, e) ->
-        expr |> ignore // TODO// TODO
+        expr |> failwith "not implemented" // TODO// TODO
 
     | Drop (x, e) ->
-        expr |> ignore // TODO// TODO
+        expr |> failwith "not implemented" // TODO// TODO
 
     | DropRu (x, r, e) ->
-        expr |> ignore // TODO // TODO
+        expr |> failwith "not implemented" // TODO // TODO
 
 
 // ----- INTERPRETER -----
@@ -136,7 +136,7 @@ let interpret expr =
 let rec showValue (loc: Loc) (state: State) : string =
     match state.heap[loc].value with
     | VCon (c, []) ->
-        c
+        string c
 
     | VCon (c, fields) ->
         let args =

@@ -57,7 +57,7 @@ and evalMatch (env : Env) (constructorName : C) (fields : Value list) (branches 
     | [] ->
         failwith $"No matching branch for constructor {constructorName}"
 
-    | (PCons (c, ids), body) :: rest ->
+    | ((c, ids), body) :: rest ->
         if c = constructorName then
 
             if List.length ids <> List.length fields then
