@@ -14,7 +14,7 @@ type Expr = // This matches page 11 of the paper:  Fig. 2. Syntax and semantics 
 | Con of C * Expr list // Id is Head and tail is expr list fx Con("1", [])
 
 type IId = int
-type IC = int
+type IC = string
 
 type IPattern = IC * IId list
 

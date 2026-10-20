@@ -22,11 +22,14 @@ let new_state () =
         ((), State.new_state ())
     )
 
-
-
 let inc_counter () =
     SM (fun m ->
         State.inc_counter m
+    )
+
+let get_fresh_id str = 
+    SM (fun m -> 
+            State.get_fresh_id str m
     )
 
 let get_id str = 
@@ -35,7 +38,7 @@ let get_id str =
     )
 
 let ret x = SM (fun m -> x, m)
-let (>>=) a f = bind a f  
+let (>>=) a f = bind a f
 let (>>>=) a b = a >>= (fun _ -> b)
 
 let sequence lst =
