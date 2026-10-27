@@ -22,7 +22,7 @@ type IExpr = // This matches page 12 of the paper: The normalized linear resourc
 | IVar of IId
 | ILam of IId*IExpr*(IId Set) // Now a closure with set of free variables
 | IApp of IExpr*IId // Now the arg has to be a variable
-| ILet of IId*IExpr*IExpr
+| ILet of IId*IExpr*IExpr*(IId Set)
 | IMatch of IId * (IPattern*IExpr) list // Now has to match with a value
 | ICon of IC * IId list // Now expressions flattened to values
 | Dup of IId * IExpr

@@ -10,12 +10,12 @@ let rec _free_vars (expr : IExpr) (bound_vars : IId Set) : IId Set =
         if Set.contains s bound_vars then Set.empty else Set.empty |> Set.add s    
     | ILam(x, _, free) -> Set.add x bound_vars |> Set.difference free 
     | IApp(e, x) -> _free_vars e bound_vars |> if Set.contains x bound_vars then id else Set.add x
-    | ILet(id, e1, e2) -> Set.union (_free_vars e1 bound_vars) (Set.add id bound_vars |> _free_vars e2)
-    | IMatch(x, patterns) -> // not sure whether the pattern should be considered free or bound variables in the first place
+    | ILet(id, e1, _, free) -> Set.union (_free_vars e1 bound_vars) (Set.add id bound_vars |> Set.difference free)
+    | IMatch(x, patterns) ->
         List.map (
             fun ((_, ids) , e) -> 
                 let ids = Set.ofList ids 
-                Set.union (_free_vars e (Set.union bound_vars ids)) (Set.filter (fun x -> not (Set.contains x ids)) ids)
+                _free_vars e (Set.union bound_vars ids)
         ) patterns
         |> Set.unionMany |> if Set.contains x bound_vars then id else Set.add x
     | ICon(_, ids) -> ids |> List.filter (fun x -> Set.contains x bound_vars) |> Set.ofList
@@ -43,7 +43,8 @@ let rec normalize (expr : Expr) : IExpr statemonad =
                 fun id1 -> inc_counter () >>= (
                 fun id2 -> normalize e1 >>= (
                 fun n1 -> normalize e2 >>= (
-                fun n2 -> ret (ILet(id1, n1, ILet(id2, n2, IApp(IVar(id1), id2)))))
+                fun n2 -> 
+                    ret (ILet(id1, n1, ILet(id2, n2, IApp(IVar(id1), id2), [id1; id2] |> Set.ofList), free_vars n2 |> Set.add id1)))
             ))
         )
 
@@ -51,7 +52,7 @@ let rec normalize (expr : Expr) : IExpr statemonad =
         sm_frame (
             List.init (List.length expr_lst) (fun _ -> inc_counter ()) |> sequence >>= 
                 fun ids -> List.map (fun e -> normalize e) expr_lst |> sequence >>= (
-                    fun iexpr_lst -> (List.zip ids iexpr_lst |>  List.foldBack (fun (i, e) n -> ILet(i, e, n))) (ICon(id,  ids)) |> ret
+                    fun iexpr_lst -> (List.zip ids iexpr_lst |>  List.foldBack (fun (i, e) n -> ILet(i, e, n, free_vars n))) (ICon(id,  ids)) |> ret
                 )
         )
 
@@ -66,11 +67,11 @@ let rec normalize (expr : Expr) : IExpr statemonad =
                         fun ids -> normalize e >>= (
                         fun n -> ret ((c, ids), n)
                     )))
-                ) patterns |> sequence >>= fun patterns -> ret (ILet(id, n , IMatch(id, patterns)))
+                ) patterns |> sequence >>= fun patterns -> ret (ILet(id, n , IMatch(id, patterns), free_vars (IMatch(id, patterns))))
             )
         )
     
     | Let (id, e1, e2) -> 
         sm_frame (
-            get_fresh_id id >>= fun id -> normalize e1 >>= fun n1 -> normalize e2 >>= fun n2 -> ret (ILet (id, n1, n2))
+            get_fresh_id id >>= fun id -> normalize e1 >>= fun n1 -> normalize e2 >>= fun n2 -> ret (ILet (id, n1, n2, free_vars n2))
         )

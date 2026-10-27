@@ -11,7 +11,7 @@ let n1 = ILam(0, ICon("42", []), Set.empty)
 
 let e2 = Let("x", Con("42", []), App(App(Var "take", Var "x"), Var "x"))
 
-let n2 = ILet (0, ICon("42", []), IApp(IApp(IVar 2, 0), 0))
+let n2 = ILet (0, ICon("42", []), IApp(IApp(IVar 2, 0), 0), Set.empty) // free vars not correct
 
 let e3 = Con("Cons", [
   unit "1"; 

@@ -97,7 +97,7 @@ let rec eval (env: Env) (state: State) (expr: IExpr) : Loc * State =
         
         | _ -> failwith "Attempted to apply a non-function"
 
-    | ILet (x, e1, e2) ->
+    | ILet (x, e1, e2, _) ->
         let loc1, state' = eval env state e1
         let env' = Map.add x loc1 env
         eval env' state' e2
