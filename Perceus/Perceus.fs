@@ -21,7 +21,7 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
     match e with    
     | IVar x when owned_size ctx = 1 && is_owned x ctx -> IVar x // svar
     | IVar x when is_empty_owned ctx && is_borrowed x ctx -> Dup (x, IVar x) // svar-dup
-    | IVar _ -> failwith "forbidden"
+    | IVar _ -> failwith "forbidden: IVar"
     
     | ICon(t, list) -> // scon
         let ys = // multiset difference
@@ -30,7 +30,7 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
                 l, Set.remove id s
             else 
                 id :: l, s
-            ) list ([], get_owned ctx) |> fst
+            ) list ([], get_owned ctx) |> fst // TODO: Is it okay to ignore unmatched owned things
         List.fold (fun acc e -> Dup(e, acc)) (ICon(t, list)) ys
 
     | ILam(x, e, free) when Set.contains x free -> // slam
@@ -41,7 +41,7 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
     | ILam(x, e, free)  -> // slam-d
         let ys = Set.remove x free
         let d1 = Set.difference ys (get_owned ctx)
-        Set.fold (fun acc x' -> Dup (x', acc)) (ILam(x, Drop(x, perceus e {borrowed = Set.empty; owned = Set.add x ys}), ys)) d1
+        Set.fold (fun acc x' -> Dup (x', acc)) (ILam(x, Drop(x, perceus e {borrowed = Set.empty; owned = ys}), ys)) d1
 
     | IApp(e, x) when is_owned x ctx -> // sapp
         let e' = perceus e {borrowed = Set.add x (get_borrowed ctx); owned = Set.remove x (get_owned ctx)}
@@ -51,7 +51,7 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
         let e' = perceus e ctx
         Dup(x, IApp(e', x)) 
 
-    | IApp _ -> failwith "forbidden"
+    | IApp _ -> failwith "forbidden: IApp"
 
     | ILet(x, e1, e2, free) when Set.contains x free -> // slet (with fv(e2) = free)
         let gamma2 = Set.intersect (get_owned ctx) free
@@ -62,10 +62,10 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
     | ILet(x, e1, e2, free)  -> // slet-d 
         let gamma2 = Set.intersect (get_owned ctx) free
         let e1' = perceus e1 {borrowed = Set.union (get_borrowed ctx) gamma2; owned = Set.difference (get_owned ctx) gamma2}
-        let e2' = perceus e2 {borrowed =  get_borrowed ctx; owned = Set.add x gamma2}
+        let e2' = perceus e2 {borrowed =  get_borrowed ctx; owned = gamma2}
         ILet(x, e1', Drop(x, e2'), free)
 
-    | IMatch(x, l) -> // smatch
+    | IMatch(x, l) -> // smatch ( TODO: Should x not be removed from the owned context? )
         let l' = 
             List.foldBack (fun  (p, e) acc -> 
                 let _, z = p
