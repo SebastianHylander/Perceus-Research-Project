@@ -41,12 +41,14 @@ let alloc (value: Value) (state: State): Loc * State =
     loc, state'
 
 let dupLoc loc state =
+    // Updates reference count for given entry location
     let entry = state.heap[loc]
 
     let entry' = { entry with rc = entry.rc + 1 }
 
     { state with heap = Map.add loc entry' state.heap }
 
+// Note this function covers drop, dlam and dcon.
 let rec dropLoc loc state =
     let entry = state.heap[loc]
 
@@ -61,9 +63,11 @@ let rec dropLoc loc state =
         // rc = 1, so this object is being freed
         let state' = { state with heap = Map.remove loc state.heap }
         match entry.value with
+        // Drop for dlam
         | VClosure (_,_,closureEnv) ->
             // Drop all the free variables in the closure environment
             closureEnv |> Map.values |> Seq.fold (fun st childLoc -> dropLoc childLoc st) state'
+        // Drop for dcon
         | VCon (_, fields) ->
             // Drop all the fields in the constructor
             fields |> List.fold (fun st childLoc -> dropLoc childLoc st) state'
@@ -75,8 +79,14 @@ let rec eval (env: Env) (state: State) (expr: IExpr) : Loc * State =
         env[x], state
 
     | ILam (x, body, freeVars) ->
+        // ClosureEnv is a subset of the current environment containing only the free variables needed by the lambda.
         let closureEnv = freeVars |> Set.fold (fun acc fv -> Map.add fv env[fv] acc) Map.empty
+        // We don't call eval yet because we want the lambda to be lazy.
         alloc (VClosure (x, body, closureEnv)) state
+    
+    | ICon (c, xs) ->
+        let fields = xs |> List.map (fun x -> env[x])
+        alloc (VCon (c, fields)) state
 
     | IApp (f, y) ->
         // Evaluate the function expression to its heap location.
@@ -87,7 +97,10 @@ let rec eval (env: Env) (state: State) (expr: IExpr) : Loc * State =
             let yLoc = env[y]
             
             // dup z
-            let state2 = closureEnv |> Map.values |> Seq.fold (fun st loc -> dupLoc loc st) state1
+            let state2 = closureEnv 
+                        |> Map.values
+                        |> Seq.fold (fun st loc -> dupLoc loc st)
+                         state1
             // drop f
             let state3 = dropLoc fLoc state2
 
@@ -97,28 +110,38 @@ let rec eval (env: Env) (state: State) (expr: IExpr) : Loc * State =
         
         | _ -> failwith "Attempted to apply a non-function"
 
-    | ILet (x, e1, e2, _) ->
-        let loc1, state' = eval env state e1
+    | IMatch (y, branches) ->
+        match state.heap[env[y]].value with
+        | VCon (c, zs) ->
+            match branches |> List.tryFind (fun ((c', _), _) -> c = c') with
+            | Some ((_, xs), e) ->
+                // Bind pattern variables to the constructor's field locations (this is the equivalent of e[x := z] in the paper)
+                let branchEnv =
+                    List.zip xs zs
+                    |> List.fold (fun acc (x, loc) ->
+                        Map.add x loc acc) env
+
+                eval branchEnv state e
+            | _ -> failwith $"No matching branch found for constructor {c}"
+
+        | _ -> failwith "Attempted to match on a non-constructor"
+    
+    | ILet (x, z, e, _) ->
+        let loc1, state' = eval env state z
+        // e[x := z]
         let env' = Map.add x loc1 env
-        eval env' state' e2
-
-
-    | IMatch (x, branches) ->
-        expr |> failwith "not implemented" // TODO
-
-    | ICon (c, xs) ->
-        let fields = xs |> List.map (fun x -> env[x])
-        alloc (VCon (c, fields)) state
-
+        eval env' state' e
 
     | Dup (x, e) ->
-        expr |> failwith "not implemented" // TODO// TODO
+        let state' = dupLoc env[x] state
+        eval env state' e
 
     | Drop (x, e) ->
-        expr |> failwith "not implemented" // TODO// TODO
+        let state' = dropLoc env[x] state
+        eval env state' e
 
     | DropRu (x, r, e) ->
-        expr |> failwith "not implemented" // TODO // TODO
+        expr |> failwith "not implemented" // TODO
 
 
 // ----- INTERPRETER -----
