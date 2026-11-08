@@ -26,6 +26,20 @@ let rec _free_vars (expr : IExpr) (bound_vars : IId Set) : IId Set =
 let  free_vars (expr : IExpr) : IId Set = _free_vars expr Set.empty
 
 
+/// When true, bindIfNeeded reuses an existing variable instead of adding a
+/// redundant let. This is not the defined behaviour in "Fig. 3. Normalization" 
+/// in the frame limited reuse paper but makes code much more readable and should not change the output.
+let use_bind_if_needed = true
+
+/// Bind a normalized expression to a fresh id only when it is not already a variable.
+let bindIfNeeded (n : IExpr) : (IId * (IExpr -> IExpr)) statemonad =
+    match n with
+    | IVar i when use_bind_if_needed -> ret (i, id)
+    | _ ->
+        inc_counter () >>= fun i ->
+        ret (i, fun body -> ILet(i, n, body, free_vars body))
+
+
 // This function does the normalization described on p 12: Fig. 3 & 4
 let rec normalize (expr : Expr) : IExpr statemonad = 
     match expr with
@@ -39,21 +53,18 @@ let rec normalize (expr : Expr) : IExpr statemonad =
 
     | App (e1, e2) -> 
         sm_frame (
-            inc_counter () >>= 
-                fun id1 -> inc_counter () >>= (
-                fun id2 -> normalize e1 >>= (
-                fun n1 -> normalize e2 >>= (
-                fun n2 -> 
-                    ret (ILet(id1, n1, ILet(id2, n2, IApp(IVar(id1), id2), [id1; id2] |> Set.ofList), free_vars n2 |> Set.add id1)))
-            ))
+            normalize e1 >>= fun n1 ->
+            normalize e2 >>= fun n2 ->
+            bindIfNeeded n1 >>= fun (f, wrapF) ->
+            bindIfNeeded n2 >>= fun (x, wrapX) ->
+            ret (wrapF (wrapX (IApp(IVar f, x))))
         )
 
     | Con (id, expr_lst) -> 
         sm_frame (
-            List.init (List.length expr_lst) (fun _ -> inc_counter ()) |> sequence >>= 
-                fun ids -> List.map (fun e -> normalize e) expr_lst |> sequence >>= (
-                    fun iexpr_lst -> (List.zip ids iexpr_lst |>  List.foldBack (fun (i, e) n -> ILet(i, e, n, free_vars n))) (ICon(id,  ids)) |> ret
-                )
+            List.map normalize expr_lst |> sequence >>= fun iexpr_lst ->
+            List.map bindIfNeeded iexpr_lst |> sequence >>= fun binds ->
+            ret (List.foldBack (fun (_, wrap) body -> wrap body) binds (ICon(id, List.map fst binds)))
         )
 
     | Match (e, patterns) -> 
