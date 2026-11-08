@@ -63,7 +63,7 @@ let rec normalize (expr : Expr) : IExpr statemonad =
             fun n -> 
                 List.map (
                     fun ((c, ids), e) -> sm_frame (
-                        List.map get_id ids |> sequence >>= (
+                        List.map get_fresh_id ids |> sequence >>= (
                         fun ids -> normalize e >>= (
                         fun n -> ret ((c, ids), n)
                     )))
