@@ -18,7 +18,7 @@ let rec _free_vars (expr : IExpr) (bound_vars : IId Set) : IId Set =
                 _free_vars e (Set.union bound_vars ids)
         ) patterns
         |> Set.unionMany |> if Set.contains x bound_vars then id else Set.add x
-    | ICon(_, ids) -> ids |> List.filter (fun x -> Set.contains x bound_vars) |> Set.ofList
+    | ICon(_, ids) -> ids |> List.filter (fun x -> not (Set.contains x bound_vars)) |> Set.ofList
     | Dup(x, e) -> _free_vars e bound_vars |> if Set.contains x bound_vars then id else Set.add x
     | Drop(x, e) -> _free_vars e bound_vars |> if Set.contains x bound_vars then id else Set.add x
     | DropRu(x, r, e) -> _free_vars e bound_vars |> (if Set.contains x bound_vars then id else Set.add x) |> if Set.contains r bound_vars then id else Set.add r
