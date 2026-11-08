@@ -1,17 +1,16 @@
- open Lang;
+%{
+open Lang
 %}
 
 %token <string> NAME
 
-%token IN LET NOT MATCH FUN END
-%token LPAR RPAR SEMICOLON RIGHTARROW
+%token LET IN FUN MATCH END
+%token LPAR RPAR LBRACE RBRACE
+%token COMMA SEMICOLON RIGHTARROW EQ
 %token EOF
 
-
 %start Main
-%type <Lang.Expr> Var Lam Let Match Con
-%type <Lang.Expr> App
-%type <Lang.Pattern> PCons
+%type <Expr> Main
 
 %%
 
@@ -20,36 +19,72 @@ Main:
 ;
 
 Expr:
-    AtExpr                              { $1                     }
-  | AppExpr                             { $1                     }
-  | Match Expr                         { Match($2, [PCons(), ]   }
-
-;
-
-AtExpr:
-    Const                               { $1                     }
-  | NAME                                { Var $1                 }
-  | LET NAME EQ Expr IN Expr END        { Let($2, $4, $6)        }
-  | FUN NAME RIGHTARROW Expr END        { Lam($2, $4)            }
-
-  | LPAR Expr RPAR                      { $2                     }
-;
-
-Params:
-    NAME                                { [$1]                   }
-  | NAME Params                         { $1 :: $2               }
-;
-
-Args:
-    AtExpr                              { [$1]                  }
-  | AtExpr Args                         { $1 :: $2              }
+    AppExpr                             { $1 }
+  | LetExpr                             { $1 }
+  | FunExpr                             { $1 }
+  | MatchExpr                           { $1 }
 ;
 
 AppExpr:
-    AtExpr AtExpr                       { App($1, $2)           }
-  | AppExpr AtExpr                      { App($1, $2)           }
+    Atom                                { $1 }
+  | AppExpr Atom                        { App($1, $2) }
 ;
 
-Const:
-    Con Name                              { Con($2, [])               }
+Atom:
+    NAME                                { Var $1 }
+  | NAME LPAR RPAR                      { Con($1, []) }
+  | NAME LPAR ArgList RPAR              { Con($1, $3) }
+  | LPAR Expr RPAR                      { $2 }
+;
+
+ArgList:
+    Expr                                { [$1] }
+  | Expr COMMA ArgList                  { $1 :: $3 }
+;
+
+LetExpr:
+    LET NAME EQ Expr IN Expr END        { Let($2, $4, $6) }
+;
+
+FunExpr:
+    FUN NAME RIGHTARROW Expr            { Lam($2, $4) }
+;
+
+MatchExpr:
+    MATCH LPAR Expr RPAR LBRACE RBRACE  { Match($3, []) }
+  | MATCH LPAR Expr RPAR LBRACE Branches RBRACE
+                                        { Match($3, $6) }
+;
+
+Branches:
+    Branch                              { [$1] }
+  | Branch Branches                     { $1 :: $2 }
+;
+
+Branch:
+    Pattern RIGHTARROW BranchBody       { ($1, $3) }
+  | Pattern BranchBody                  { ($1, $2) }
+;
+
+Pattern:
+    NAME                                { ($1, []) }
+  | NAME LPAR RPAR                      { ($1, []) }
+  | NAME LPAR PatternArgs RPAR          { ($1, $3) }
+;
+
+PatternArgs:
+    NAME                                { [$1] }
+  | NAME COMMA PatternArgs              { $1 :: $3 }
+;
+
+BranchBody:
+    Block                               { $1 }
+  | LetExpr                             { $1 }
+  | MatchExpr                           { $1 }
+  | Atom                                { $1 }
+;
+
+Block:
+    LBRACE Expr RBRACE                  { $2 }
+  | LBRACE Expr SEMICOLON RBRACE        { $2 }
 ;

@@ -1,27 +1,22 @@
-module Lex
-
+{
 open FSharp.Text.Lexing
-open FunPar;
+open Parse
 
-let lexemeAsString lexbuf = 
+let lexemeAsString lexbuf =
     LexBuffer<char>.LexemeString lexbuf
 
 (* Start of outermost comment currently being scanned *)
-let commentStart = ref Position.Empty;  
- 
-let commentDepth = ref 0;  (* Current comment nesting *)
+let commentStart = ref Position.Empty
+
+let commentDepth = ref 0  (* Current comment nesting *)
 
 (* Distinguish keywords from identifiers: *)
-
 let keyword s =
     match s with
     | "match" -> MATCH
-    | "fun" -> FUN
+    | "fun"   -> FUN
     | "in"    -> IN
     | "let"   -> LET
-    | "dup"   -> DUP
-    | "drop"   -> DROP
-    | "dropru"   -> DROPRU
     | "end"   -> END
     | _       -> NAME s
 }
@@ -29,25 +24,28 @@ let keyword s =
 rule Token = parse
   | [' ' '\t' '\r'] { Token lexbuf }
   | '\n'            { lexbuf.EndPos <- lexbuf.EndPos.NextLine; Token lexbuf }
-  | ['a'-'z''A'-'Z']['a'-'z''A'-'Z''0'-'9']*
+  | ['a'-'z' 'A'-'Z' '_']['a'-'z' 'A'-'Z' '0'-'9' '_']*
                     { keyword (lexemeAsString lexbuf) }
   | "(*"            { commentStart := lexbuf.StartPos;
-                      commentDepth := 1; 
+                      commentDepth := 1;
                       SkipComment lexbuf; Token lexbuf }
   | '('             { LPAR }
   | ')'             { RPAR }
+  | '{'             { LBRACE }
+  | '}'             { RBRACE }
   | ';'             { SEMICOLON }
   | ','             { COMMA }
-  | '->'            { RIGHTARROW }
+  | '='             { EQ }
+  | "->"            { RIGHTARROW }
   | eof             { EOF }
   | _               { failwith "Lexer error: illegal symbol" }
 
 and SkipComment = parse
-    "*)"            { commentDepth := !commentDepth - 1;  
+    "*)"            { commentDepth := !commentDepth - 1;
                       if !commentDepth = 0 then ()
-                      else SkipComment lexbuf 
-                    } 
-   | "(*"           { commentDepth := !commentDepth + 1; 
+                      else SkipComment lexbuf
+                    }
+   | "(*"           { commentDepth := !commentDepth + 1;
                       SkipComment lexbuf }
    | eof            { failwith "Lexer error: unterminated comment" }
    | _              { SkipComment lexbuf }

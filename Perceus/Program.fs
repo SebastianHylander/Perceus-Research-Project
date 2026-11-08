@@ -1,7 +1,7 @@
 ﻿open Lang
 open Normalization
 open Monad
-open State
+open Perceus
 
 let unit x = Con(x, [])
 
@@ -46,8 +46,54 @@ let map : Expr =
         Var "map"
     )
 
+let rec pp (e : IExpr) : string =
+    match e with
+    | IVar x -> "var" + string x
+    | ICon (c, []) -> c
+    | ICon (c, xs) -> sprintf "%s(%s)" c (xs |> List.map string |> String.concat ", ")
+    | IApp (IVar f, x) -> sprintf "%d %d" f x
+    | IApp (f, x) -> sprintf "(%s) %d" (pp f) x
+    | ILam (x, body, _) -> sprintf "fun var%d -> \n %s" x (pp body)
+    | ILet (x, e1, e2, _) -> sprintf "let var%d = %s in %s" x (pp e1) (pp e2)
+    | IMatch (x, cases) ->
+        let arm ((c, xs), body) =
+            let pat = String.concat " " (c :: List.map string xs)
+            sprintf "%s -> %s" pat (pp body)
+        sprintf "match %d with \n %s" x (cases |> List.map arm |> String.concat " | ")
+    | Dup (x, e) -> sprintf "dup var%d in %s" x (pp e)
+    | Drop (x, e) -> sprintf "drop var%d in %s" x (pp e)
+    | DropRu (x, r, e) -> sprintf "dropru var%d -> %d in %s" x r (pp e)
+
+
 let run (SM(f)) = 
     f (State.new_state ())
 
-printfn "%A" (run (normalize e2))
-printfn "%A" (run (normalize e2 >>= fun n2 -> free_vars n2 |> ret))
+
+
+let source = "let map = fun xs -> fun f ->
+    match(xs) {
+        Cons(x,xx) {
+            match(f x) {
+                Error(err) -> { Error(err); }
+                Ok(y) -> { match(map xx f) {
+                    Error(err) -> Error(err)
+                    Ok(ys) -> Cons(y,ys)
+                }}
+            }
+        }
+    }
+in map end
+                
+"
+let lexbuf = FSharp.Text.Lexing.LexBuffer<char>.FromString source
+let parsed = Parse.Main Lex.Token lexbuf
+printfn "Parsed: \n%A\n" parsed
+
+let map_normalized, st = run (normalize parsed)  
+
+
+printfn "Normalized \n%A\n" st
+printfn "Normalized \n%A\n" (pp map_normalized)
+
+let map_perceus = perceus map_normalized {borrowed = Set.empty; owned = Set.empty } 
+printfn "Perceus \n%A\n" (pp map_perceus)
