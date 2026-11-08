@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -7,7 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FsLexYacc.Runtime" Version="11.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="Lang.fs" />
+    <Compile Include="Parsing/Parse.fs" />
+    <Compile Include="Parsing/Lex.fs" />
     <Compile Include="State.fs" />
     <Compile Include="Monad.fs" />
     <Compile Include="Normalization.fs" />
