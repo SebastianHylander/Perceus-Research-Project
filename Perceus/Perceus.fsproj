@@ -21,6 +21,7 @@
     <Compile Include="RCInterpreter.fs" />
     <Compile Include="SourceInterpreter.fs" />
     <Compile Include="IExprPrint.fs" />
+    <Compile Include="Examples.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
