@@ -69,17 +69,16 @@ let rec normalize (expr : Expr) : IExpr statemonad =
 
     | Match (e, patterns) -> 
         sm_frame (
-            inc_counter () >>= 
-            fun id -> normalize e >>= (
-            fun n -> 
-                List.map (
-                    fun ((c, ids), e) -> sm_frame (
-                        List.map get_fresh_id ids |> sequence >>= (
-                        fun ids -> normalize e >>= (
-                        fun n -> ret ((c, ids), n)
-                    )))
-                ) patterns |> sequence >>= fun patterns -> ret (ILet(id, n , IMatch(id, patterns), free_vars (IMatch(id, patterns))))
-            )
+            normalize e >>= fun n ->
+            List.map (
+                fun ((c, ids), e) -> sm_frame (
+                    List.map get_fresh_id ids |> sequence >>= (
+                    fun ids -> normalize e >>= (
+                    fun n -> ret ((c, ids), n)
+                )))
+            ) patterns |> sequence >>= fun patterns ->
+            bindIfNeeded n >>= fun (id, wrap) ->
+            ret (wrap (IMatch(id, patterns)))
         )
     
     | Let (id, e1, e2) ->  // TODO: Should let not remove the bound id from its free-vars?
