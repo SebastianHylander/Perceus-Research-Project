@@ -25,11 +25,11 @@ let iexpr_print (names : Map<int, string>) (e : IExpr) : string =
     let rec effectParts (e : IExpr) acc =
         match e with
         | Dup (x, body) ->
-            effectParts body (sprintf "dup %s in" (name x) :: acc)
+            effectParts body (sprintf "dup %s;" (name x) :: acc)
         | Drop (x, body) ->
-            effectParts body (sprintf "drop %s in" (name x) :: acc)
+            effectParts body (sprintf "drop %s;" (name x) :: acc)
         | DropRu (x, r, body) ->
-            effectParts body (sprintf "dropru %s -> %s in" (name x) (name r) :: acc)
+            effectParts body (sprintf "dropru %s -> %s;" (name x) (name r) :: acc)
         | _ -> List.rev acc, e
 
     let rec go (e : IExpr) : string =
@@ -71,6 +71,6 @@ let iexpr_print (names : Map<int, string>) (e : IExpr) : string =
                 (cases |> List.map arm |> String.concat "\n")
         | Dup _ | Drop _ | DropRu _ ->
             let effects, body = effectParts e []
-            String.concat "\n" (effects @ [go body])
+            String.concat " " (effects @ [go body])
 
     go e
