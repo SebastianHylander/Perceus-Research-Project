@@ -14,7 +14,7 @@ let bind (SM f) (g : 'a -> statemonad<'b>) =
 let sm_frame (SM f) = 
     SM (fun m ->
         let x, m' = f m
-        x, {counter = m'.counter; used_vars = m.used_vars}
+        x, {counter = m'.counter; used_vars = m.used_vars; names = m'.names}
     )
 
 let new_state () = 

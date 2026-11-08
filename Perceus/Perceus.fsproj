@@ -23,6 +23,7 @@
     <Compile Include="Reuse.fs" />
     <Compile Include="RCInterpreter.fs" />
     <Compile Include="SourceInterpreter.fs" />
+    <Compile Include="IExprPrint.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
