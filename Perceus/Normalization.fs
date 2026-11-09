@@ -71,7 +71,7 @@ let rec normalize (expr : Expr) : IExpr statemonad =
             )
         )
     
-    | Let (id, e1, e2) ->  // TODO: Should let not remove the bound id from its free-vars?
+    | Let (id, e1, e2) ->
         sm_frame (
             get_fresh_id id >>= fun id -> normalize e1 >>= fun n1 -> normalize e2 >>= fun n2 -> ret (ILet (id, n1, n2, free_vars n2))
         )
