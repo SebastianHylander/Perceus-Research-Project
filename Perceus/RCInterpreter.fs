@@ -73,42 +73,45 @@ let rec dropLoc loc state =
             fields |> List.fold (fun st childLoc -> dropLoc childLoc st) state'
 
 // ----- EVALUATION -----
-let rec eval (env: Env) (state: State) (expr: IExpr) : Loc * State =
+[<TailCall>]
+let rec evalc (env: Env) (state: State) (expr: IExpr) (cont: Loc * State -> Loc * State): Loc * State =
     match expr with
     | IVar x ->
-        env[x], state
+        (env[x], state) |> cont
 
     | ILam (x, body, freeVars) ->
         // ClosureEnv is a subset of the current environment containing only the free variables needed by the lambda.
         let closureEnv = freeVars |> Set.fold (fun acc fv -> Map.add fv env[fv] acc) Map.empty
         // We don't call eval yet because we want the lambda to be lazy.
-        alloc (VClosure (x, body, closureEnv)) state
+        alloc (VClosure (x, body, closureEnv)) state |> cont
     
     | ICon (c, xs) ->
         let fields = xs |> List.map (fun x -> env[x])
-        alloc (VCon (c, fields)) state
+        alloc (VCon (c, fields)) state |> cont
 
     | IApp (f, y) ->
-        // Evaluate the function expression to its heap location.
-        let fLoc, state1 = eval env state f
-        match state1.heap[fLoc].value with
-        | VClosure (x, body, closureEnv) ->
-            // Evaluate the argument expression to its heap location.
-            let yLoc = env[y]
-            
-            // dup z
-            let state2 = closureEnv 
-                        |> Map.values
-                        |> Seq.fold (fun st loc -> dupLoc loc st)
-                         state1
-            // drop f
-            let state3 = dropLoc fLoc state2
 
-            // Equivalent to e[x := y]
-            let bodyEnv = closureEnv |> Map.add x yLoc
-            eval bodyEnv state3 body
-        
-        | _ -> failwith "Attempted to apply a non-function"
+        // Evaluate the function expression to its heap location.
+        evalc env state f (fun (fLoc, state1) -> 
+            match state1.heap[fLoc].value with
+            | VClosure (x, body, closureEnv) ->
+                // Evaluate the argument expression to its heap location.
+                let yLoc = env[y]
+                
+                // dup z
+                let state2 = closureEnv 
+                                |> Map.values
+                                |> Seq.fold (fun st loc -> dupLoc loc st)
+                                state1
+                // drop f
+                let state3 = dropLoc fLoc state2
+
+                // Equivalent to e[x := y]
+                let bodyEnv = closureEnv |> Map.add x yLoc
+                evalc bodyEnv state3 body (fun res -> res |> cont)
+            
+            | _ -> failwith "Attempted to apply a non-function"
+        )
 
     | IMatch (y, branches) ->
         match state.heap[env[y]].value with
@@ -121,28 +124,30 @@ let rec eval (env: Env) (state: State) (expr: IExpr) : Loc * State =
                     |> List.fold (fun acc (x, loc) ->
                         Map.add x loc acc) env
 
-                eval branchEnv state e
+                evalc branchEnv state e (fun res -> res |> cont)
             | _ -> failwith $"No matching branch found for constructor {c}"
 
         | _ -> failwith "Attempted to match on a non-constructor"
     
     | ILet (x, z, e, _) ->
-        let loc1, state' = eval env state z
-        // e[x := z]
-        let env' = Map.add x loc1 env
-        eval env' state' e
+        evalc env state z (fun (loc1, state') ->
+            // e[x := z]
+            let env' = Map.add x loc1 env
+            evalc env' state' e (fun res -> res |> cont)
+        )
 
     | Dup (x, e) ->
         let state' = dupLoc env[x] state
-        eval env state' e
+        evalc env state' e (fun res -> res |> cont)
 
     | Drop (x, e) ->
         let state' = dropLoc env[x] state
-        eval env state' e
+        evalc env state' e (fun res -> res |> cont)
 
     | DropRu (x, r, e) ->
         expr |> failwith "not implemented" // TODO
 
+let eval (env: Env) (state: State) (expr: IExpr) = evalc env state expr id
 
 // ----- INTERPRETER -----
 let interpret expr =
