@@ -57,7 +57,7 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
         let gamma2 = Set.intersect (get_owned ctx) free
         let e1' = perceus e1 {borrowed = Set.union (get_borrowed ctx) gamma2; owned = Set.difference (get_owned ctx) gamma2}
         let e2' = perceus e2 {borrowed =  get_borrowed ctx; owned = Set.add x gamma2}
-        ILet(x, e1', e2', free)
+        ILet(x, e1', e2', Set.remove x free)
 
     | ILet(x, e1, e2, free)  -> // slet-d 
         let gamma2 = Set.intersect (get_owned ctx) free
