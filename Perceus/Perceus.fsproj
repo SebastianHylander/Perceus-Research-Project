@@ -3,9 +3,18 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>10</LangVersion> 
+    <WarningsAsErrors>$(WarningsAsErrors);FS3569</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Lang.fs" />
+    <Compile Include="State.fs" />
+    <Compile Include="Monad.fs" />
+    <Compile Include="Normalization.fs" />
+    <Compile Include="Perceus.fs" />
+    <Compile Include="RCInterpreter.fs" />
+    <Compile Include="SourceInterpreter.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
