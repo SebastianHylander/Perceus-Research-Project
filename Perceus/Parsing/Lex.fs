@@ -1,6 +1,6 @@
 module Lex
 
-# 1 "Lex.fsl"
+# 1 "Parsing/Lex.fsl"
  
 open FSharp.Text.Lexing
 open Parse
@@ -23,7 +23,7 @@ let keyword s =
     | "end"   -> END
     | _       -> NAME s
 
-# 26 "Lex.fs"
+# 26 "Parsing/Lex.fs"
 let trans : uint16[] array = 
     [| 
     (* State 0 *)
@@ -82,105 +82,105 @@ let rec _fslex_dummy () = _fslex_dummy()
 and Token  lexbuf =
   match _fslex_tables.Interpret(7,lexbuf) with
   | 0 -> ( 
-# 25 "Lex.fsl"
+# 25 "Parsing/Lex.fsl"
                                      Token lexbuf 
-# 87 "Lex.fs"
+# 87 "Parsing/Lex.fs"
           )
   | 1 -> ( 
-# 26 "Lex.fsl"
+# 26 "Parsing/Lex.fsl"
                                      lexbuf.EndPos <- lexbuf.EndPos.NextLine; Token lexbuf 
-# 92 "Lex.fs"
+# 92 "Parsing/Lex.fs"
           )
   | 2 -> ( 
-# 28 "Lex.fsl"
+# 28 "Parsing/Lex.fsl"
                                      keyword (lexemeAsString lexbuf) 
-# 97 "Lex.fs"
+# 97 "Parsing/Lex.fs"
           )
   | 3 -> ( 
-# 29 "Lex.fsl"
+# 29 "Parsing/Lex.fsl"
                                      commentStart := lexbuf.StartPos;
                                      commentDepth := 1;
                                      SkipComment lexbuf; Token lexbuf 
-# 104 "Lex.fs"
+# 104 "Parsing/Lex.fs"
           )
   | 4 -> ( 
-# 32 "Lex.fsl"
+# 32 "Parsing/Lex.fsl"
                                      LPAR 
-# 109 "Lex.fs"
+# 109 "Parsing/Lex.fs"
           )
   | 5 -> ( 
-# 33 "Lex.fsl"
+# 33 "Parsing/Lex.fsl"
                                      RPAR 
-# 114 "Lex.fs"
+# 114 "Parsing/Lex.fs"
           )
   | 6 -> ( 
-# 34 "Lex.fsl"
+# 34 "Parsing/Lex.fsl"
                                      LBRACE 
-# 119 "Lex.fs"
+# 119 "Parsing/Lex.fs"
           )
   | 7 -> ( 
-# 35 "Lex.fsl"
+# 35 "Parsing/Lex.fsl"
                                      RBRACE 
-# 124 "Lex.fs"
+# 124 "Parsing/Lex.fs"
           )
   | 8 -> ( 
-# 36 "Lex.fsl"
+# 36 "Parsing/Lex.fsl"
                                      SEMICOLON 
-# 129 "Lex.fs"
+# 129 "Parsing/Lex.fs"
           )
   | 9 -> ( 
-# 37 "Lex.fsl"
+# 37 "Parsing/Lex.fsl"
                                      COMMA 
-# 134 "Lex.fs"
+# 134 "Parsing/Lex.fs"
           )
   | 10 -> ( 
-# 38 "Lex.fsl"
+# 38 "Parsing/Lex.fsl"
                                      EQ 
-# 139 "Lex.fs"
+# 139 "Parsing/Lex.fs"
           )
   | 11 -> ( 
-# 39 "Lex.fsl"
+# 39 "Parsing/Lex.fsl"
                                      RIGHTARROW 
-# 144 "Lex.fs"
+# 144 "Parsing/Lex.fs"
           )
   | 12 -> ( 
-# 40 "Lex.fsl"
+# 40 "Parsing/Lex.fsl"
                                      EOF 
-# 149 "Lex.fs"
+# 149 "Parsing/Lex.fs"
           )
   | 13 -> ( 
-# 41 "Lex.fsl"
+# 41 "Parsing/Lex.fsl"
                                      failwith "Lexer error: illegal symbol" 
-# 154 "Lex.fs"
+# 154 "Parsing/Lex.fs"
           )
   | _ -> failwith "Token"
 // Rule SkipComment
 and SkipComment  lexbuf =
   match _fslex_tables.Interpret(0,lexbuf) with
   | 0 -> ( 
-# 44 "Lex.fsl"
+# 44 "Parsing/Lex.fsl"
                                      commentDepth := !commentDepth - 1;
                                      if !commentDepth = 0 then ()
                                      else SkipComment lexbuf
                                    
-# 166 "Lex.fs"
+# 166 "Parsing/Lex.fs"
           )
   | 1 -> ( 
-# 48 "Lex.fsl"
+# 48 "Parsing/Lex.fsl"
                                      commentDepth := !commentDepth + 1;
                                      SkipComment lexbuf 
-# 172 "Lex.fs"
+# 172 "Parsing/Lex.fs"
           )
   | 2 -> ( 
-# 50 "Lex.fsl"
+# 50 "Parsing/Lex.fsl"
                                      failwith "Lexer error: unterminated comment" 
-# 177 "Lex.fs"
+# 177 "Parsing/Lex.fs"
           )
   | 3 -> ( 
-# 51 "Lex.fsl"
+# 51 "Parsing/Lex.fsl"
                                      SkipComment lexbuf 
-# 182 "Lex.fs"
+# 182 "Parsing/Lex.fs"
           )
   | _ -> failwith "SkipComment"
 
-# 3000000 "Lex.fs"
+# 3000000 "Parsing/Lex.fs"
