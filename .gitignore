@@ -58,6 +58,4 @@ nunit-*.xml
 
 
 # Extra
-**/Parsing/*.fs
-**/Parsing/*.fsi
 .vscode
