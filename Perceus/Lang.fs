@@ -5,7 +5,11 @@ type C = string
 
 type Pattern = C * Id list
 
-type Expr = // This matches page 11 of the paper:  Fig. 2. Syntax and semantics of 𝜆1
+type TopExpr =
+| Fun of Id * Expr * TopExpr 
+| Cont of Expr
+
+and Expr = // This matches page 11 of the paper:  Fig. 2. Syntax and semantics of 𝜆1
 | Var of Id
 | Lam of Id*Expr // lambda x.e  (x: Id, e: Expr)
 | App of Expr*Expr
@@ -18,7 +22,11 @@ type IC = string
 
 type IPattern = IC * IId list
 
-type IExpr = // This matches page 12 of the paper: The normalized linear resource calculus 𝜆1n
+type ITopExpr =
+| IFun of IExpr * ITopExpr
+| ICont of IExpr
+
+and IExpr = // This matches page 12 of the paper: The normalized linear resource calculus 𝜆1n
 | IVar of IId
 | ILam of IId*IExpr*(IId Set) // Now a closure with set of free variables
 | IApp of IExpr*IId // Now the arg has to be a variable
