@@ -23,7 +23,7 @@ type IC = string
 type IPattern = IC * IId list
 
 type ITopExpr =
-| IFun of IExpr * ITopExpr
+| IFun of IId * IExpr * ITopExpr
 | ICont of IExpr
 
 and IExpr = // This matches page 12 of the paper: The normalized linear resource calculus 𝜆1n

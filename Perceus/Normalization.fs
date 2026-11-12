@@ -41,20 +41,20 @@ let bindIfNeeded (n : IExpr) : (IId * (IExpr -> IExpr)) statemonad =
 
 
 // This function does the normalization described on p 12: Fig. 3 & 4
-let rec normalize (expr : Expr) : IExpr statemonad = 
+let rec _normalize (expr : Expr) : IExpr statemonad = 
     match expr with
     | Var s -> 
         get_id s >>= fun i -> sm_frame (ret (IVar i))
 
     | Lam (id, e) -> 
         sm_frame (
-            get_fresh_id id >>= fun id -> normalize e >>= fun n -> ret (ILam (id, n, free_vars n))
+            get_fresh_id id >>= fun id -> _normalize e >>= fun n -> ret (ILam (id, n, free_vars n))
         )
 
     | App (e1, e2) -> 
         sm_frame (
-            normalize e1 >>= fun n1 ->
-            normalize e2 >>= fun n2 ->
+            _normalize e1 >>= fun n1 ->
+            _normalize e2 >>= fun n2 ->
             bindIfNeeded n1 >>= fun (f, wrapF) ->
             bindIfNeeded n2 >>= fun (x, wrapX) ->
             ret (wrapF (wrapX (IApp(IVar f, x))))
@@ -62,18 +62,18 @@ let rec normalize (expr : Expr) : IExpr statemonad =
 
     | Con (id, expr_lst) -> 
         sm_frame (
-            List.map normalize expr_lst |> sequence >>= fun iexpr_lst ->
+            List.map _normalize expr_lst |> sequence >>= fun iexpr_lst ->
             List.map bindIfNeeded iexpr_lst |> sequence >>= fun binds ->
             ret (List.foldBack (fun (_, wrap) body -> wrap body) binds (ICon(id, List.map fst binds)))
         )
 
     | Match (e, patterns) -> 
         sm_frame (
-            normalize e >>= fun n ->
+            _normalize e >>= fun n ->
             List.map (
                 fun ((c, ids), e) -> sm_frame (
                     List.map get_fresh_id ids |> sequence >>= (
-                    fun ids -> normalize e >>= (
+                    fun ids -> _normalize e >>= (
                     fun n -> ret ((c, ids), n)
                 )))
             ) patterns |> sequence >>= fun patterns ->
@@ -83,5 +83,10 @@ let rec normalize (expr : Expr) : IExpr statemonad =
     
     | Let (id, e1, e2) ->
         sm_frame (
-            get_fresh_id id >>= fun id -> normalize e1 >>= fun n1 -> normalize e2 >>= fun n2 -> ret (ILet (id, n1, n2, free_vars n2))
+            get_fresh_id id >>= fun id -> _normalize e1 >>= fun n1 -> _normalize e2 >>= fun n2 -> ret (ILet (id, n1, n2, free_vars n2))
         )
+
+let rec normalize (expr : TopExpr) : ITopExpr statemonad =
+    match expr with    
+    | Fun(id, e, t) -> get_fresh_id id >>= fun id -> _normalize e >>= fun ne -> normalize t >>= fun nt -> ret (IFun (id, ne, nt))
+    | Cont e -> _normalize e >>= fun n -> ret (ICont n)
