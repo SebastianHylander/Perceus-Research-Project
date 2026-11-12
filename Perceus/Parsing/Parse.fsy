@@ -9,6 +9,9 @@ open Lang
 %token COMMA SEMICOLON RIGHTARROW EQ
 %token EOF
 
+%nonassoc NAME
+%nonassoc LPAR
+
 %start Main
 %type <Expr> Main
 
