@@ -2,11 +2,13 @@ module Perceus
 
 open Lang
 
-type Context = {borrowed : IId Set; owned : IId Set}
+type Context = {borrowed : IId Set; owned : IId Set; top : IId Set}
 
 let is_owned x c = Set.contains x c.owned
 
 let is_borrowed x c = Set.contains x c.borrowed
+
+let is_global x c = Set.contains x c.top
 
 let owned_size c = Set.count c.owned
 
@@ -17,7 +19,7 @@ let get_owned c = c.owned
 let get_borrowed c = c.borrowed
 
 
-let rec perceus (e : IExpr) (ctx : Context) : IExpr = 
+let rec _perceus (e : IExpr) (ctx : Context) : IExpr = 
     match e with    
     | IVar x when owned_size ctx = 1 && is_owned x ctx -> IVar x // svar
     | IVar x when is_empty_owned ctx && is_borrowed x ctx -> Dup (x, IVar x) // svar-dup
@@ -36,33 +38,37 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
     | ILam(x, e, free) when Set.contains x free -> // slam
         let ys = Set.remove x free
         let d1 = Set.difference ys (get_owned ctx)
-        Set.fold (fun acc x' -> Dup (x', acc)) (ILam(x, perceus e {borrowed = Set.empty; owned = Set.add x ys}, ys)) d1
+        Set.fold (fun acc x' -> Dup (x', acc)) (ILam(x, _perceus e {ctx with borrowed = Set.empty; owned = Set.add x ys}, ys)) d1
 
     | ILam(x, e, free)  -> // slam-d
         let ys = Set.remove x free
         let d1 = Set.difference ys (get_owned ctx)
-        Set.fold (fun acc x' -> Dup (x', acc)) (ILam(x, Drop(x, perceus e {borrowed = Set.empty; owned = ys}), ys)) d1
+        Set.fold (fun acc x' -> Dup (x', acc)) (ILam(x, Drop(x, _perceus e {ctx with borrowed = Set.empty; owned = ys}), ys)) d1
 
     | IApp(e, x) when is_owned x ctx -> // sapp
-        let e' = perceus e {borrowed = Set.add x (get_borrowed ctx); owned = Set.remove x (get_owned ctx)}
+        let e' = _perceus e {ctx with borrowed = Set.add x (get_borrowed ctx); owned = Set.remove x (get_owned ctx)}
         IApp(e', x) 
 
     | IApp(e, x) when is_borrowed x ctx -> // sapp-dup
-        let e' = perceus e ctx
+        let e' = _perceus e ctx
         Dup(x, IApp(e', x)) 
+    
+    | IApp(e,x) when is_global x ctx ->
+        let e' = _perceus e ctx
+        Dup(x, IApp(e', x)) // duping x from global into owned
 
     | IApp _ -> failwith "forbidden: IApp"
 
     | ILet(x, e1, e2, free) when Set.contains x free -> // slet (with fv(e2) = free)
         let gamma2 = Set.intersect (get_owned ctx) free
-        let e1' = perceus e1 {borrowed = Set.union (get_borrowed ctx) gamma2; owned = Set.difference (get_owned ctx) gamma2}
-        let e2' = perceus e2 {borrowed =  get_borrowed ctx; owned = Set.add x gamma2}
+        let e1' = _perceus e1 {ctx with borrowed = Set.union (get_borrowed ctx) gamma2; owned = Set.difference (get_owned ctx) gamma2}
+        let e2' = _perceus e2 {ctx with borrowed =  get_borrowed ctx; owned = Set.add x gamma2}
         ILet(x, e1', e2', Set.remove x free)
 
     | ILet(x, e1, e2, free)  -> // slet-d 
         let gamma2 = Set.intersect (get_owned ctx) free
-        let e1' = perceus e1 {borrowed = Set.union (get_borrowed ctx) gamma2; owned = Set.difference (get_owned ctx) gamma2}
-        let e2' = perceus e2 {borrowed =  get_borrowed ctx; owned = gamma2}
+        let e1' = _perceus e1 {ctx with borrowed = Set.union (get_borrowed ctx) gamma2; owned = Set.difference (get_owned ctx) gamma2}
+        let e2' = _perceus e2 {ctx with borrowed =  get_borrowed ctx; owned = gamma2}
         ILet(x, e1', Drop(x, e2'), free)
 
     | IMatch(x, l) -> // smatch ( TODO: Should x not be removed from the owned context? )
@@ -73,7 +79,7 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
                 let combined = Set.union (get_owned ctx) (Set.ofList z)
                 let gamma_i = Set.intersect fv_ei combined
                 let gamma_i' = Set.difference combined gamma_i
-                let e' = perceus e {borrowed =  get_borrowed ctx; owned = gamma_i}
+                let e' = _perceus e {ctx with borrowed =  get_borrowed ctx; owned = gamma_i}
 
                 let e'' = Set.fold (fun acc x -> Drop(x, acc)) e' gamma_i'
                 (p, List.fold (fun acc x -> Dup(x, acc)) e'' z) :: acc
@@ -83,3 +89,12 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
     | Dup(_, _) -> failwith "Not Implemented"
     | Drop(_, _) -> failwith "Not Implemented"
     | DropRu(_, _, _) -> failwith "Not Implemented"
+
+let rec perceus (expr : ITopExpr) (ctx : Context) =
+    match expr with    
+    | IFun(x, e, t) -> 
+        let e' = _perceus e {ctx with top = Set.add x ctx.top}
+        let t' = perceus t {ctx with top = Set.add x ctx.top}
+        IFun(x, e', t')
+
+    | ICont e -> ICont (_perceus e ctx) 

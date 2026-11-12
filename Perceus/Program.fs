@@ -12,7 +12,7 @@ let run (SM(f)) =
 let runExample (example : Example) =
     let parsed = Parse.Main Lex.Token (LexBuffer<char>.FromString example.Source)
     let normalized, st = run (normalize parsed)
-    let perceusExpr = perceus normalized {borrowed = Set.empty; owned = Set.empty}
+    let perceusExpr = _perceus normalized {borrowed = Set.empty; owned = Set.empty}
 
     printfn "===== %s =====" example.Name
     printfn "Normalized:\n%s\n" (iexpr_print st.names normalized)
