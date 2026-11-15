@@ -70,3 +70,32 @@ Each instance counts as 1, so "gamma,x" adds one instance of x to the multiset
 
 The global counter can be higher than owned variables, because variables can
 be in borrowed, and will later be dropped by some other code.
+
+## Session 3
+
+### Should let closure keep x in it? (They seem to have both in the paper)
+
+No, the rules we implement check for x being in the closure, so to make this work we should not.
+They are inconsistent in the papers, so we need to write in the report that this is our choice.
+
+### Recursion in the interpreter, how should this be handled?
+
+- slet: are we allowed to keep x as borrowed when evaluating e1?
+
+Top level definitions are special and can be recursive,
+and we do not want to reference count them.
+
+### Should we use a result monad instead of failwith?
+
+If it keeps the code simpler, keep the failwith, as this is not the important part.
+
+
+### Should RCIntepreter do the drop and dup? Should they not be expressions added in the IExpr already, and the intepreter just executes them
+
+Some things need to be added dynamically, so dub and drop should be added in both places.
+
+### Should we implement the Invariants as tests for debugging
+Might be a nice extra to have
+
+### Extra
+delta and gamma can be implemented as reader monads
