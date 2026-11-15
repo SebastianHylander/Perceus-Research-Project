@@ -36,12 +36,14 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
     | ILam(x, e, free) when Set.contains x free -> // slam
         let ys = Set.remove x free
         let d1 = Set.difference ys (get_owned ctx)
-        Set.fold (fun acc x' -> Dup (x', acc)) (ILam(x, perceus e {borrowed = Set.empty; owned = Set.add x ys}, ys)) d1
+        let e' = perceus e {borrowed = Set.empty; owned = Set.add x ys}
+        Set.fold (fun acc x' -> Dup (x', acc)) (ILam(x, e', ys)) d1
 
     | ILam(x, e, free)  -> // slam-d
         let ys = Set.remove x free
         let d1 = Set.difference ys (get_owned ctx)
-        Set.fold (fun acc x' -> Dup (x', acc)) (ILam(x, Drop(x, perceus e {borrowed = Set.empty; owned = ys}), ys)) d1
+        let e' = perceus e {borrowed = Set.empty; owned = ys}
+        Set.fold (fun acc x' -> Dup (x', acc)) (ILam(x, Drop(x, e'), ys)) d1
 
     | IApp(e, x) when is_owned x ctx -> // sapp
         let e' = perceus e {borrowed = Set.add x (get_borrowed ctx); owned = Set.remove x (get_owned ctx)}
@@ -68,15 +70,15 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
     | IMatch(x, l) -> // smatch ( TODO: Should x not be removed from the owned context? )
         let l' = 
             List.foldBack (fun  (p, e) acc -> 
-                let _, z = p
+                let _, zs = p
                 let fv_ei = Normalization.free_vars e
-                let combined = Set.union (get_owned ctx) (Set.ofList z)
+                let combined = Set.union (get_owned ctx) (Set.ofList zs)
                 let gamma_i = Set.intersect fv_ei combined
                 let gamma_i' = Set.difference combined gamma_i
                 let e' = perceus e {borrowed =  get_borrowed ctx; owned = gamma_i}
 
                 let e'' = Set.fold (fun acc x -> Drop(x, acc)) e' gamma_i'
-                (p, List.fold (fun acc x -> Dup(x, acc)) e'' z) :: acc
+                (p, List.fold (fun acc x -> Dup(x, acc)) e'' zs) :: acc
             ) l []
         IMatch(x, l')
 
