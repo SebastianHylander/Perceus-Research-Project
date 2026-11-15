@@ -27,4 +27,4 @@ type IExpr = // This matches page 12 of the paper: The normalized linear resourc
 | ICon of IC * IId list // Now expressions flattened to values
 | Dup of IId * IExpr
 | Drop of IId * IExpr
-| DropRu of IId * IId *IExpr // (x, r, e) from "r <-dropru x; e"
+| DropRu of IId * IId * IExpr // (x, r, e) from "r <-dropru x; e"
