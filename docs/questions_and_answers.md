@@ -70,8 +70,6 @@ Each instance counts as 1, so "gamma,x" adds one instance of x to the multiset
 
 The global counter can be higher than owned variables, because variables can
 be in borrowed, and will later be dropped by some other code.
-<<<<<<< Updated upstream
-=======
 
 ## Session 3
 
@@ -137,4 +135,3 @@ So it would look like S |- e|R -> r' | R'
 We can add mutual recursion, just go through all top level expressions
 Example traversing a tree
 
->>>>>>> Stashed changes
