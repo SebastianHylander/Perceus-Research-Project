@@ -13,7 +13,7 @@
 #let rcon_ru = pt(
   name: [$["RCON-REUSE"]$],
   [$overline(x)=x_1 "..." x_n$],
-  [$S VDash C overline(x) | R, r:n ~> C overline(x) | R$]
+  [$S VDash C overline(x) | R, r:n ~> C_r overline(x) | R$]
 )
 
 #let rcon = pt(
