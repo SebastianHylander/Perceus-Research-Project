@@ -85,7 +85,7 @@ let rec evalc (env: Env) (state: State) (expr: IExpr) (cont: Loc * State -> Loc 
         // We don't call eval yet because we want the lambda to be lazy.
         alloc (VClosure (x, body, closureEnv)) state |> cont
     
-    | ICon (c, xs) ->
+    | ICon (c, xs, ru) ->
         let fields = xs |> List.map (fun x -> env[x])
         alloc (VCon (c, fields)) state |> cont
 
