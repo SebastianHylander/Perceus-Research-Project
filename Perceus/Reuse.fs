@@ -12,8 +12,7 @@ let map_intersect (a: Map<'a, 'b>) (b: Map<'a, 'd>) = Map.filter (fun k _ -> b.C
 let map_difference (a: Map<'a, 'b>) (b: Map<'a, 'd>) = Map.filter (fun k _ ->  not (b.ContainsKey k) ) a
 
 let rec reuse (e : IExpr) (r: Reuse_vars): (IExpr * Reuse_vars) statemonad = 
-    match e with    
-    
+    match e with
     | Drop(x, e) -> // RDROP-REUSE && RDROP1 && RDROP2
         get_s () >>= fun s ->
         match s.TryFind x with
@@ -36,31 +35,18 @@ let rec reuse (e : IExpr) (r: Reuse_vars): (IExpr * Reuse_vars) statemonad =
 
     | IMatch(x, l) -> // RMATCH
         get_s () >>= fun s ->
-        match Map.tryFind x s with
-        | None -> 
-            l |> List.map (fun ((c, ids), ei) -> 
-                    reuse ei r >>= fun (ei', ri') ->
-                        ret (((c, ids), ei'), ri')
-                ) |> sequence >>= fun result ->
-                    let patterns, r_list = List.unzip result
-                    let r' = List.fold map_intersect r_list[0] r_list
-                    ret (IMatch(x, patterns), r')
-
-        | Some x -> 
             l |> List.map (fun ((c, ids), ei) -> 
                     set_s (Map.add x ids.Length s) >>>=
                     reuse ei r >>= fun (ei', ri') ->
                         ret (((c, ids), ei'), ri')
-                ) |> sequence >>= fun result ->
-                    let _, r_list = List.unzip result
-                    let r' = List.fold map_intersect r_list[0] r_list
-                    let with_drops = result |> List.map (fun (((c, ids), ei), ri) -> 
-                        let ei' = ei |> add_drops (map_difference ri r' |> Map.keys |> List.ofSeq) 
-                        (c, ids), ei'
-                    )
-
-                    ret (IMatch(x, with_drops), r')
-
+            ) |> sequence >>= fun result ->
+                let _, r_list = List.unzip result
+                let r' = List.fold map_intersect r_list[0] r_list
+                let with_drops = result |> List.map (fun (((c, ids), ei), ri) -> 
+                    let ei' = ei |> add_drops (map_difference ri r' |> Map.keys |> List.ofSeq) 
+                    (c, ids), ei'
+                )
+                ret (IMatch(x, with_drops), r')
           
     | IVar _ -> ret (e, r) // RVAR
 
