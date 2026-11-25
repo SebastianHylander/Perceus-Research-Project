@@ -3,7 +3,7 @@ open Lang
 
 type Sizes = Map<IId, int>
 
-type State = {
+type ReuseState = {
     counter: int;
     s : Sizes;
 }
@@ -13,7 +13,10 @@ let new_state () = { counter = -1; s = Map.empty }
 let inc_counter s = s.counter, {s with counter = s.counter - 1}
 
 
-type 'a statemonad = SM of (State -> ('a * State))
+type 'a statemonad = SM of (ReuseState -> ('a * ReuseState))
+
+let run (SM(f)) =
+    f (new_state ())
 
 let bind (SM f) (g : 'a -> statemonad<'b>) =  
     SM (fun m ->  
@@ -48,4 +51,3 @@ let sequence lst =
             ret (x :: xs))
         lst
         (ret [])
-
