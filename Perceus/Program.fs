@@ -7,11 +7,11 @@ let unit x = Con(x, [])
 
 let e1 = Lam ("x", Con("42", []))
 
-let n1 = ILam(0, ICon("42", []), Set.empty) 
+let n1 = ILam(0, ICon("42", [], None), Set.empty) 
 
 let e2 = Let("x", Con("42", []), App(App(Var "take", Var "x"), Var "x"))
 
-let n2 = ILet (0, ICon("42", []), IApp(IApp(IVar 2, 0), 0), Set.empty) // free vars not correct
+let n2 = ILet (0, ICon("42", [], None), IApp(IApp(IVar 2, 0), 0), Set.empty) // free vars not correct
 
 let e3 = Con("Cons", [
   unit "1"; 

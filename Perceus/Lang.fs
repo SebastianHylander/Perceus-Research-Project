@@ -24,7 +24,7 @@ type IExpr = // This matches page 12 of the paper: The normalized linear resourc
 | IApp of IExpr*IId // Now the arg has to be a variable
 | ILet of IId*IExpr*IExpr*(IId Set)
 | IMatch of IId * (IPattern*IExpr) list // Now has to match with a value
-| ICon of IC * IId list // Now expressions flattened to values
+| ICon of IC * IId list * IId Option // Now expressions flattened to values
 | Dup of IId * IExpr
 | Drop of IId * IExpr
 | DropRu of IId * IId *IExpr // (x, r, e) from "r <-dropru x; e"

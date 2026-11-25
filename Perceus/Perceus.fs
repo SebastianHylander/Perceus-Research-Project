@@ -23,7 +23,7 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
     | IVar x when is_empty_owned ctx && is_borrowed x ctx -> Dup (x, IVar x) // svar-dup
     | IVar _ -> failwith "forbidden: IVar"
     
-    | ICon(t, list) -> // scon
+    | ICon(t, list, ru) -> // scon
         let ys = // multiset difference
             List.foldBack (fun id (l, s) -> 
             if Set.contains id s then 
@@ -31,7 +31,7 @@ let rec perceus (e : IExpr) (ctx : Context) : IExpr =
             else 
                 id :: l, s
             ) list ([], get_owned ctx) |> fst // TODO: Is it okay to ignore unmatched owned things
-        List.fold (fun acc e -> Dup(e, acc)) (ICon(t, list)) ys
+        List.fold (fun acc e -> Dup(e, acc)) (ICon(t, list, ru)) ys
 
     | ILam(x, e, free) when Set.contains x free -> // slam
         let ys = Set.remove x free
