@@ -137,4 +137,34 @@ So it would look like S |- e|R -> r' | R'
 We can add mutual recursion, just go through all top level expressions
 Example traversing a tree
 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+
+
+## Session 5
+
+## RCON-REUSE, should we make an explicit @r, or just recogninze drop r; cons as they do in the paper.
+
+Add en explicit @r, so our implementation follows the rules as much as possible
+
+## Report, how many pages, what format 
+
+At least have:
+Intro, 
+Background (papers used) don't repeat all rules from them
+Implementation, avoid too much code, show new inference rules 
+ - Maybe show data-representation and a single rule implemented in code, but use code sparingly
+ - Add supervisor to front page, but no special attribution needed
+ - Show examples on the way, try to use a running example
+ - Also have errors we got into, why fx union did not work for match, alternative solutions
+ - We could fx show how we understood and changed a rule from their paper
+Meaningful conclusion (something we added/learned new rules, what we had to figure out)
+
+
+
+Write our invariants, but not formal theorems, we should be able to informally reason about it 
+
+Keep it as short as possible, but they are typically about 20 pages (10-30 is a good range)
+
 >>>>>>> Stashed changes
