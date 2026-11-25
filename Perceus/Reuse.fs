@@ -22,7 +22,7 @@ let rec reuse (e : IExpr) (r: Reuse_vars): (IExpr * Reuse_vars) statemonad =
             inc_counter_monad () >>= fun r_key -> 
             reuse e (Map.add r_key n r) >>= fun (e', r') ->
             if Map.containsKey r_key r' then // RDROP2
-                ret ( Drop(x, e'), r')
+                ret ( Drop(x, e'), Map.remove r_key r')
             else // RDROP-REUSE
                 ret ( DropRu(x, r_key, e'), r')
         
