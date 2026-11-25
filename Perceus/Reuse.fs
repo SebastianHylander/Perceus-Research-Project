@@ -12,7 +12,8 @@ let map_intersect (a: Map<'a, 'b>) (b: Map<'a, 'd>) = Map.filter (fun k _ -> b.C
 let map_difference (a: Map<'a, 'b>) (b: Map<'a, 'd>) = Map.filter (fun k _ ->  not (b.ContainsKey k) ) a
 
 let rec reuse (e : IExpr) (r: Reuse_vars): (IExpr * Reuse_vars) statemonad = 
-    match e with
+    match e with    
+    
     | Drop(x, e) -> // RDROP-REUSE && RDROP1 && RDROP2
         get_s () >>= fun s ->
         match s.TryFind x with
