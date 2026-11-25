@@ -12,6 +12,7 @@
     <Compile Include="State.fs" />
     <Compile Include="Monad.fs" />
     <Compile Include="Normalization.fs" />
+    <Compile Include="ReuseMonad.fs" />
     <Compile Include="Perceus.fs" />
     <Compile Include="Reuse.fs" />
     <Compile Include="RCInterpreter.fs" />
